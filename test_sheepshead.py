@@ -42,4 +42,39 @@ def test_allowed_cards():
     layed_out_cards = []
     player_cards = create_shuffled_deck()
 
-    assert len(Sauspiel().allowed_cards(layed_out_cards, player_cards)) == 120
+    assert len(Sauspiel().allowed_cards(layed_out_cards, player_cards)) == 32
+
+
+def test_allowed_cards_2():
+    layed_out_cards = [Card(SCHELLEN, ACHT)]
+    player_cards = [Card(HERZ, NEUN), Card(SCHELLEN, OBER), Card(SCHELLEN, SAU), Card(GRAS, SIEBEN)]
+
+    assert Sauspiel().allowed_cards(layed_out_cards, player_cards) == [Card(SCHELLEN, SAU)]
+
+
+def test_allowed_cards_3():
+    layed_out_cards = [Card(SCHELLEN, ACHT), Card(SCHELLEN, KOENIG), Card(EICHEL, UNTER)]
+    player_cards = [Card(HERZ, NEUN), Card(SCHELLEN, OBER), Card(SCHELLEN, SIEBEN)]
+
+    assert Sauspiel().allowed_cards(layed_out_cards, player_cards) == [Card(SCHELLEN, SIEBEN)]
+
+
+def test_allowed_cards_4():
+    layed_out_cards = [Card(SCHELLEN, UNTER)]
+    player_cards = [Card(GRAS, NEUN), Card(EICHEL, SAU), Card(SCHELLEN, SIEBEN)]
+
+    assert Sauspiel().allowed_cards(layed_out_cards, player_cards) == player_cards
+
+
+def test_allowed_cards_5():
+    layed_out_cards = [Card(SCHELLEN, UNTER)]
+    player_cards = [Card(GRAS, NEUN), Card(EICHEL, SAU), Card(SCHELLEN, SIEBEN), Card(GRAS, OBER)]
+
+    assert Sauspiel().allowed_cards(layed_out_cards, player_cards) == [Card(GRAS, OBER)]
+
+
+def test_allowed_cards_6():
+    layed_out_cards = [Card(SCHELLEN, ACHT)]
+    player_cards = [Card(HERZ, NEUN), Card(SCHELLEN, OBER), Card(GRAS, SIEBEN)]
+
+    assert Sauspiel().allowed_cards(layed_out_cards, player_cards) == player_cards

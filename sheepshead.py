@@ -28,7 +28,20 @@ class Sauspiel:
         return np.argmin([card_to_power(card) for card in cards])
 
     def allowed_cards(self, layed_out_cards: List[Card], player_cards: List[Card]):
-        pass
+        if len(layed_out_cards) == 0:
+            return player_cards
+
+        first_card = layed_out_cards[0]
+
+        if first_card in self.TRUMP_CARD_RANKS:
+            matching_cards = [c for c in player_cards if c in self.TRUMP_CARD_RANKS]
+        else:
+            matching_cards = [c for c in player_cards if c.suit == first_card.suit and c.face in self.NON_TRUMP_FACE_RANKS]
+
+        if len(matching_cards) == 0:
+            return player_cards
+        else:
+            return matching_cards
 
 
 if __name__ == '__main__':
