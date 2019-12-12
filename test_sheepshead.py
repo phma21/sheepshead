@@ -1,5 +1,5 @@
 from deck import *
-from sheepshead import Sauspiel
+from sheepshead import Sauspiel, Game
 
 
 def test_winning_position_trump():
@@ -78,3 +78,86 @@ def test_allowed_cards_6():
     player_cards = [Card(HERZ, NEUN), Card(SCHELLEN, OBER), Card(GRAS, SIEBEN)]
 
     assert Sauspiel().allowed_cards(layed_out_cards, player_cards) == player_cards
+
+
+class DummyMode:
+
+    def winning_position(self, _):
+        return 1
+
+    def allowed_cards(self, _, player_cards):
+        return player_cards
+
+
+def test_play_card():
+
+    player_cards = [[Card(HERZ, OBER)], [Card(GRAS, UNTER)], [Card(EICHEL, SAU)], [Card(SCHELLEN, ACHT)]]
+
+    game = Game(mode=DummyMode(), player_cards=player_cards)
+
+    assert game.num_players == 4
+    assert game.current_trick == []
+    assert game.current_player == 0
+    assert len(game.player_cards[0]) == 1
+    assert game.get_scores_per_player() == [0, 0, 0, 0]
+
+    game.play_card(Card(HERZ, OBER))
+
+    assert game.current_player == 1
+    assert len(game.player_cards[0]) == 0
+    assert game.current_trick == [Card(HERZ, OBER)]
+
+    game.play_card(Card(GRAS, UNTER))
+    game.play_card(Card(EICHEL, SAU))
+
+    assert game.current_trick == [Card(HERZ, OBER), Card(GRAS, UNTER), Card(EICHEL, SAU)]
+
+    game.play_card(Card(SCHELLEN, ACHT))
+
+    assert game.current_player == 1  # player 1 won the trick
+    assert len(game.player_cards[3]) == 0
+    assert game.current_trick == []
+    # todo: will be changed anyway
+    assert game.past_tricks == [
+        [],
+        [[Card(HERZ, OBER), Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ACHT)]],
+        [],
+        []]
+
+    # assert game.get_scores_per_player() == [0, 16, 0, 0]
+
+
+def test_resolve_winning_player():
+    current_player = 2
+    winning_pos = 3
+
+    expected_winning_player = 2
+
+    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)
+
+
+def test_resolve_winning_player_2():
+    current_player = 2
+    winning_pos = 1
+
+    expected_winning_player = 0
+
+    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)
+
+
+def test_resolve_winning_player_3():
+    current_player = 2
+    winning_pos = 0
+
+    expected_winning_player = 3
+
+    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)
+
+
+def test_resolve_winning_player_4():
+    current_player = 0
+    winning_pos = 2
+
+    expected_winning_player = 3
+
+    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)

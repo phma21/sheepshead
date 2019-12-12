@@ -78,5 +78,10 @@ def create_shuffled_deck() -> List[Card]:
     return deck
 
 
+def create_shuffled_player_hands() -> List[List[Card]]:
+    deck = create_shuffled_deck()
+    return [deck[0:8], deck[8:16], deck[16:24], deck[24:32]]
+
+
 def count_score(cards: Iterable[Card]):
     return sum(map(lambda card: SCORE_VALUES[card.face], cards))
