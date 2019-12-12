@@ -64,7 +64,7 @@ class Game:
     def resolve_winning_player(self, current_player, winning_pos):
         winning_pos_relative_to_player = winning_pos - (self.num_players - 1)
         winning_player = current_player + winning_pos_relative_to_player  # can be negative
-        return winning_player if winning_player >= 0 else winning_player + self.num_players
+        return (winning_player + self.num_players) % 4
 
     # todo
     def get_scores_per_player(self):
