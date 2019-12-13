@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 
 from deck import *
@@ -5,41 +7,19 @@ from deck import *
 
 class BasicTrumpGame:
 
-    def __init__(self, trump=HERZ):
-        self.trump = trump
+    def __init__(self, trump=HERZ, face_trump_order=(OBER, UNTER)):
+        self.NON_TRUMP_ORDER = [face for face in Face if face not in face_trump_order]
 
+        self.NON_TRUMP_FACE_RANKS = {face: power + 100 for power, face in enumerate(self.NON_TRUMP_ORDER)}
 
+        self.TRUMP_ORDER = []
+        for face_trump in face_trump_order:
+            self.TRUMP_ORDER += [Card(s, face_trump) for s in Suit]
+        self.TRUMP_ORDER += [Card(trump, f) for f in self.NON_TRUMP_ORDER]
 
+        self.TRUMP_CARD_RANKS = {card: power for power, card in enumerate(self.TRUMP_ORDER)}
 
-class Sauspiel:
-
-    NON_TRUMP_ORDER = [SAU, ZEHN, KOENIG, NEUN, ACHT, SIEBEN]
-    NON_TRUMP_FACE_RANKS = {face: power + 100 for power, face in enumerate(NON_TRUMP_ORDER)}
-
-    TRUMP_ORDER = [Card(s, OBER) for s in Suit] \
-        + [Card(s, UNTER) for s in Suit] \
-        + [Card(HERZ, f) for f in NON_TRUMP_ORDER]
-    TRUMP_CARD_RANKS = {card: power for power, card in enumerate(TRUMP_ORDER)}
-
-    def __init__(self, rufsau: Card, davon_laufen=False):
-        self.rufsau = rufsau
-        self.davon_laufen = davon_laufen
-
-    def winning_position(self, cards: List[Card]):
-        first_suit = cards[0].suit
-
-        def card_to_power(card):
-            try:
-                return self.TRUMP_CARD_RANKS[card]
-            except KeyError:
-                if card.suit == first_suit:
-                    return self.NON_TRUMP_FACE_RANKS[card.face]
-                else:
-                    return 1000
-
-        return np.argmin([card_to_power(card) for card in cards])
-
-    def allowed_cards_basegame(self, layed_out_cards: List[Card], player_cards: Set[Card]) -> Set[Card]:
+    def allowed_cards(self, layed_out_cards: List[Card], player_cards: Set[Card]) -> Set[Card]:
         if len(layed_out_cards) == 0:
             return player_cards
 
@@ -55,6 +35,29 @@ class Sauspiel:
             return player_cards
         else:
             return matching_cards
+
+    def winning_position(self, cards: List[Card]):
+        first_suit = cards[0].suit
+
+        def card_to_power(card):
+            try:
+                return self.TRUMP_CARD_RANKS[card]
+            except KeyError:
+                if card.suit == first_suit:
+                    return self.NON_TRUMP_FACE_RANKS[card.face]
+                else:
+                    return 1000
+
+        return np.argmin([card_to_power(card) for card in cards])
+
+
+class Sauspiel:
+
+    def __init__(self, player_cards: List[Set[Card]], rufsau: Card, playmaker: int, davon_laufen=False):
+        self.rufsau = rufsau
+        self.davon_laufen = davon_laufen
+        self.basic_game = BasicTrumpGame()
+        self.teams = self.determine_teams(player_cards, playmaker)
 
     # chain this function after applying general_trump_game_rule
     def apply_rufsau_rule(self, layed_out_cards: List[Card], len_player_cards: int, allowed_cards: Set[Card]) -> Set[Card]:
@@ -73,20 +76,32 @@ class Sauspiel:
         else:
             return allowed_cards
 
+    def winning_position(self, *args):
+        return self.basic_game.winning_position(*args)
+
     def allowed_cards(self, layed_out_cards: List[Card], player_cards: Set[Card]) -> Set[Card]:
-        allowed_cards_base = self.allowed_cards_basegame(layed_out_cards, player_cards)
+        allowed_cards_base = self.basic_game.allowed_cards(layed_out_cards, player_cards)
         return self.apply_rufsau_rule(layed_out_cards, len(player_cards), allowed_cards_base)
 
     def filter_rufsau_accompanying_cards(self, cards: Set[Card]) -> Set[Card]:
         return {card for card in cards if
-                    card.face in self.NON_TRUMP_FACE_RANKS
-                    and card.suit == self.rufsau.suit
-                    and card != self.rufsau}
+                card.face in self.basic_game.NON_TRUMP_FACE_RANKS
+                and card.suit == self.rufsau.suit
+                and card != self.rufsau}
 
-    # todo later: extend and extract to generalize to different trump
-    # todo: after implementing rufsau, add function to determine teams
+    def determine_teams(self, player_cards, playmaker) -> Tuple[Set[int], Set[int]]:
 
-    # todo: add replay functionality to game (need to change how past_tricks are stored)
+        players = set()
+        non_players = set()
+        for it_player in range(len(player_cards)):
+            if any([card == self.rufsau for card in player_cards[it_player]]):
+                players.add(it_player)
+            elif playmaker == it_player:
+                players.add(it_player)
+            else:
+                non_players.add(it_player)
+
+        return players, non_players
 
 
 class Game:
@@ -111,10 +126,6 @@ class Game:
     def get_scores_per_team(self):
         # 0 player team, 1 non-player team
         return [0, 0]
-
-    # todo
-    def get_teams(self):
-        return [[0], [1, 2, 3]]
 
     def play_card(self, card):
         # Player must hold the card in hand
@@ -145,6 +156,6 @@ if __name__ == '__main__':
 
     deck = create_shuffled_deck()
 
-    sauspiel = Sauspiel()
+    # sauspiel = Sauspiel()
 
-    print(sauspiel.TRUMP_ORDER)
+    # print(sauspiel.TRUMP_ORDER)

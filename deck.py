@@ -17,14 +17,14 @@ EICHEL = Suit.EICHEL
 
 
 class Face(Enum):
-    SIEBEN = 1
-    ACHT = 2
-    NEUN = 3
-    UNTER = 4
-    OBER = 5
-    KOENIG = 6
-    ZEHN = 7
     SAU = 8
+    ZEHN = 7
+    KOENIG = 6
+    OBER = 5
+    UNTER = 4
+    NEUN = 3
+    ACHT = 2
+    SIEBEN = 1
 
 
 SIEBEN = Face.SIEBEN
