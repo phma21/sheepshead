@@ -258,4 +258,4 @@ def test_determine_teams():
 
     rufspiel = Sauspiel(create_shuffled_player_hands(), Card(GRAS, SAU), playmaker)
 
-    assert rufspiel.determine_teams(player_cards, playmaker) == ({1, 3}, {0, 2})
+    assert rufspiel._determine_teams(player_cards, playmaker) == ({1, 3}, {0, 2})

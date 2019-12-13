@@ -57,7 +57,7 @@ class Sauspiel:
         self.rufsau = rufsau
         self.davon_laufen = davon_laufen
         self.basic_game = BasicTrumpGame()
-        self.teams = self.determine_teams(player_cards, playmaker)
+        self.teams = self._determine_teams(player_cards, playmaker)
 
     # chain this function after applying general_trump_game_rule
     def apply_rufsau_rule(self, layed_out_cards: List[Card], len_player_cards: int, allowed_cards: Set[Card]) -> Set[Card]:
@@ -89,7 +89,7 @@ class Sauspiel:
                 and card.suit == self.rufsau.suit
                 and card != self.rufsau}
 
-    def determine_teams(self, player_cards, playmaker) -> Tuple[Set[int], Set[int]]:
+    def _determine_teams(self, player_cards, playmaker) -> Tuple[Set[int], Set[int]]:
 
         players = set()
         non_players = set()
@@ -103,6 +103,9 @@ class Sauspiel:
 
         return players, non_players
 
+
+# todo: save tricks differently so they can be replayed
+# todo: implement scores per player to read scores on the fly
 
 class Game:
     def __init__(self, mode, player_cards: List[Set[Card]]):
@@ -122,10 +125,14 @@ class Game:
     def get_scores_per_player(self):
         return [0, 0, 0, 0]
 
-    # todo
     def get_scores_per_team(self):
         # 0 player team, 1 non-player team
-        return [0, 0]
+        scores_per_player = self.get_scores_per_player()
+
+        playmaker_scores = [scores_per_player[player] for player in self.mode.teams[0]]
+        non_player_scores = [scores_per_player[player] for player in self.mode.teams[1]]
+
+        return sum(playmaker_scores), sum(non_player_scores)
 
     def play_card(self, card):
         # Player must hold the card in hand
