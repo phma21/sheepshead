@@ -1,6 +1,6 @@
 from enum import Enum
 from random import shuffle
-from typing import List, Iterable
+from typing import List, Iterable, Set
 
 
 class Suit(Enum):
@@ -68,6 +68,9 @@ class Card:
     def __str__(self):
         return f"{self.suit.name} {self.face.name}"
 
+    def __repr__(self):
+        return f"({self.suit.name}, {self.face.name})"
+
 
 def create_shuffled_deck() -> List[Card]:
     deck = []
@@ -78,9 +81,9 @@ def create_shuffled_deck() -> List[Card]:
     return deck
 
 
-def create_shuffled_player_hands() -> List[List[Card]]:
+def create_shuffled_player_hands() -> List[Set[Card]]:
     deck = create_shuffled_deck()
-    return [deck[0:8], deck[8:16], deck[16:24], deck[24:32]]
+    return [set(deck[0:8]), set(deck[8:16]), set(deck[16:24]), set(deck[24:32])]
 
 
 def count_score(cards: Iterable[Card]):
