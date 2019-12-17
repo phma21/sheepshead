@@ -37,7 +37,7 @@ KOENIG = Face.KOENIG
 SAU = Face.SAU
 
 
-SCORE_VALUES = {
+CARD_SCORE = {
     SIEBEN: 0,
     ACHT: 0,
     NEUN: 0,
@@ -87,4 +87,4 @@ def create_shuffled_player_hands() -> List[Set[Card]]:
 
 
 def count_score(cards: Iterable[Card]):
-    return sum(map(lambda card: SCORE_VALUES[card.face], cards))
+    return sum(map(lambda card: CARD_SCORE[card.face], cards))

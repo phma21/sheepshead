@@ -1,5 +1,5 @@
 from deck import *
-from sheepshead import Sauspiel, Game
+from sheepshead import Sauspiel, Game, Tick
 
 
 def setup_eichel_rufspiel():
@@ -203,14 +203,10 @@ def test_play_card():
     assert game.current_player == 1  # player 1 won the trick
     assert len(game.player_cards[3]) == 0
     assert game.current_trick == []
-    # todo: will be changed anyway
-    assert game.past_tricks == [
-        [],
-        [[Card(HERZ, OBER), Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ACHT)]],
-        [],
-        []]
+    assert game.past_ticks == [
+        Tick([Card(HERZ, OBER), Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ACHT)], 1)]
 
-    # assert game.get_scores_per_player() == [0, 16, 0, 0]
+    assert game.get_scores_per_player() == [0, 16, 0, 0]
 
 
 def test_resolve_winning_player():

@@ -1,3 +1,4 @@
+from collections import namedtuple
 from typing import Tuple
 
 import numpy as np
@@ -51,6 +52,9 @@ class BasicTrumpGame:
         return np.argmin([card_to_power(card) for card in cards])
 
 
+# todo: implement game start and end, play first random agents on sauspiel
+
+
 class Sauspiel:
 
     def __init__(self, player_cards: List[Set[Card]], rufsau: Card, playmaker: int, davon_laufen=False):
@@ -90,7 +94,6 @@ class Sauspiel:
                 and card != self.rufsau}
 
     def _determine_teams(self, player_cards, playmaker) -> Tuple[Set[int], Set[int]]:
-
         players = set()
         non_players = set()
         for it_player in range(len(player_cards)):
@@ -104,15 +107,15 @@ class Sauspiel:
         return players, non_players
 
 
-# todo: save tricks differently so they can be replayed
-# todo: implement scores per player to read scores on the fly
+Tick = namedtuple('Tick', 'cards scoring_player')
+
 
 class Game:
     def __init__(self, mode, player_cards: List[Set[Card]]):
         self.mode: Sauspiel = mode
-        self.player_cards = player_cards
+        self.player_cards: List[Set[Card]] = player_cards
         self.num_players = len(player_cards)
-        self.past_tricks = [[] for _ in range(self.num_players)]
+        self.past_ticks: List[Tick] = []
         self.current_trick = []
         self.current_player = 0
 
@@ -121,9 +124,12 @@ class Game:
         winning_player = current_player + winning_pos_relative_to_player  # can be negative
         return (winning_player + self.num_players) % 4
 
-    # todo
     def get_scores_per_player(self):
-        return [0, 0, 0, 0]
+        scores = [0, 0, 0, 0]
+        for tick in self.past_ticks:
+            scores[tick.scoring_player] += sum([CARD_SCORE[card.face] for card in tick.cards])
+
+        return scores
 
     def get_scores_per_team(self):
         # 0 player team, 1 non-player team
@@ -152,7 +158,7 @@ class Game:
             winning_pos = self.mode.winning_position(self.current_trick)
             winning_player = self.resolve_winning_player(self.current_player, winning_pos)
 
-            self.past_tricks[winning_player].append(self.current_trick)
+            self.past_ticks.append(Tick(self.current_trick, winning_player))
             self.current_trick = []
             self.current_player = winning_player
         else:
