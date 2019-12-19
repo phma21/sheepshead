@@ -1,5 +1,7 @@
+import pytest
+
 from deck import *
-from sheepshead import Sauspiel, Game, Tick
+from sheepshead import Sauspiel, Game, Tick, get_game_results
 
 
 def setup_eichel_rufspiel():
@@ -185,7 +187,7 @@ def test_play_card():
     assert game.current_trick == []
     assert game.current_player == 0
     assert len(game.player_cards[0]) == 1
-    assert game.get_scores_per_player() == [0, 0, 0, 0]
+    assert game.get_scores_per_player() == (0, 0, 0, 0)
 
     game.play_card(Card(HERZ, OBER))
 
@@ -206,7 +208,124 @@ def test_play_card():
     assert game.past_ticks == [
         Tick([Card(HERZ, OBER), Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ACHT)], 1)]
 
-    assert game.get_scores_per_player() == [0, 16, 0, 0]
+    assert game.get_scores_per_player() == (0, 16, 0, 0)
+
+
+def setup_3_player_2_cards_sauspiel():
+    player_cards = [{Card(HERZ, OBER), Card(EICHEL, KOENIG)},
+                    {Card(GRAS, UNTER), Card(GRAS, ACHT)},
+                    {Card(EICHEL, SAU), Card(EICHEL, ACHT)}]
+
+    return Game(Sauspiel(player_cards, Card(EICHEL, SAU), playmaker=0), player_cards)
+
+
+def test_play_sauspiel_disallowed_card():
+    game = setup_3_player_2_cards_sauspiel()
+    with pytest.raises(Exception):
+        game.play_card(Card(GRAS, UNTER))
+
+
+def test_play_sauspiel_disallowed_card_2():
+    game = setup_3_player_2_cards_sauspiel()
+    game.play_card(Card(HERZ, OBER))
+
+    with pytest.raises(Exception):
+        game.play_card(Card(GRAS, ACHT))
+
+
+def test_play_sauspiel_until_end():
+    game = setup_3_player_2_cards_sauspiel()
+
+    tick_1 = Tick([Card(HERZ, OBER), Card(GRAS, UNTER), Card(EICHEL, ACHT)], scoring_player=0)
+    tick_2 = Tick([Card(EICHEL, KOENIG), Card(GRAS, ACHT), Card(EICHEL, SAU)], scoring_player=2)
+
+    assert game.teams == ({0, 2}, {1})
+
+    game.play_card(Card(HERZ, OBER))
+    game.play_card(Card(GRAS, UNTER))
+    game.play_card(Card(EICHEL, ACHT))
+
+    assert game.current_trick == []
+    assert game.current_player == 0
+    assert game.past_ticks == [tick_1]
+
+    game.play_card(Card(EICHEL, KOENIG))
+    game.play_card(Card(GRAS, ACHT))
+    game.play_card(Card(EICHEL, SAU))
+
+    assert game.current_trick == []
+    assert game.current_player == 2
+    assert game.past_ticks == [tick_1, tick_2]
+
+    assert game.get_scores_per_player() == (5, 0, 15)
+
+    assert game.get_scores_per_team() == (20, 0)
+
+
+def test_game_results_score_missmatch():
+    with pytest.raises(Exception):
+        get_game_results(None, (19, 5))
+
+
+def test_game_results():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (61, 59)
+
+    # todo
+
+
+def test_game_results_2():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (60, 60)
+
+    # todo
+
+
+def test_game_results_3():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (90, 30)
+
+    # todo
+
+
+def test_game_results_4():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (91, 29)
+
+    # todo
+
+
+def test_game_results_5():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (120, 0)
+
+    # todo: rules correct?
+
+
+def test_game_results_6():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (31, 89)
+
+    # todo
+
+
+def test_game_results_7():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (30, 90)
+
+    # todo
+
+
+def test_game_results_8():
+    teams = ({1, 2}, {0, 3})
+    scores_per_team = (0, 120)
+
+    # todo: rules correct?
+
+
+def test_game_results_laufende():
+    # TODO: Laufende
+    pass
 
 
 def test_resolve_winning_player():
@@ -215,7 +334,7 @@ def test_resolve_winning_player():
 
     expected_winning_player = 2
 
-    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)
+    assert expected_winning_player == Game(None, list(range(4))).resolve_tick_winner(current_player, winning_pos)
 
 
 def test_resolve_winning_player_2():
@@ -224,7 +343,7 @@ def test_resolve_winning_player_2():
 
     expected_winning_player = 0
 
-    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)
+    assert expected_winning_player == Game(None, list(range(4))).resolve_tick_winner(current_player, winning_pos)
 
 
 def test_resolve_winning_player_3():
@@ -233,7 +352,7 @@ def test_resolve_winning_player_3():
 
     expected_winning_player = 3
 
-    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)
+    assert expected_winning_player == Game(None, list(range(4))).resolve_tick_winner(current_player, winning_pos)
 
 
 def test_resolve_winning_player_4():
@@ -242,7 +361,7 @@ def test_resolve_winning_player_4():
 
     expected_winning_player = 3
 
-    assert expected_winning_player == Game(None, list(range(4))).resolve_winning_player(current_player, winning_pos)
+    assert expected_winning_player == Game(None, list(range(4))).resolve_tick_winner(current_player, winning_pos)
 
 
 def test_determine_teams():

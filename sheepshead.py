@@ -53,6 +53,13 @@ class BasicTrumpGame:
 
 
 # todo: implement game start and end, play first random agents on sauspiel
+# money value of game
+
+# 1 test mit vordefinierten karten, komplettes spiel
+# 1 test was passiert wenn karte gespielt wird die nicht in hand ist
+#                                           die schonmal gespielt wurde
+#                                           die nicht erlaubt ist
+# test über geld wert vom spiel
 
 
 class Sauspiel:
@@ -111,27 +118,31 @@ Tick = namedtuple('Tick', 'cards scoring_player')
 
 
 class Game:
-    def __init__(self, mode, player_cards: List[Set[Card]]):
+    def __init__(self, mode, player_cards: List[Set[Card]], starting_player=0):
         self.mode: Sauspiel = mode
         self.player_cards: List[Set[Card]] = player_cards
         self.num_players = len(player_cards)
         self.past_ticks: List[Tick] = []
         self.current_trick = []
-        self.current_player = 0
+        self.current_player = starting_player
 
-    def resolve_winning_player(self, current_player, winning_pos):
+    def resolve_tick_winner(self, current_player, winning_pos):
         winning_pos_relative_to_player = winning_pos - (self.num_players - 1)
         winning_player = current_player + winning_pos_relative_to_player  # can be negative
-        return (winning_player + self.num_players) % 4
+        return (winning_player + self.num_players) % self.num_players
 
-    def get_scores_per_player(self):
-        scores = [0, 0, 0, 0]
+    @property
+    def teams(self):
+        return self.mode.teams
+
+    def get_scores_per_player(self) -> Tuple[int]:
+        scores = [0] * self.num_players
         for tick in self.past_ticks:
-            scores[tick.scoring_player] += sum([CARD_SCORE[card.face] for card in tick.cards])
+            scores[tick.scoring_player] += count_score(tick.cards)
 
-        return scores
+        return tuple(scores)
 
-    def get_scores_per_team(self):
+    def get_scores_per_team(self) -> Tuple[int]:
         # 0 player team, 1 non-player team
         scores_per_player = self.get_scores_per_player()
 
@@ -156,13 +167,33 @@ class Game:
         if len(self.current_trick) == self.num_players:
             # determine winner, give tick to him and set him as next player
             winning_pos = self.mode.winning_position(self.current_trick)
-            winning_player = self.resolve_winning_player(self.current_player, winning_pos)
+            winning_player = self.resolve_tick_winner(self.current_player, winning_pos)
 
             self.past_ticks.append(Tick(self.current_trick, winning_player))
             self.current_trick = []
             self.current_player = winning_player
-        else:
+        else:  # tick not complete
             self.current_player = (self.current_player + 1) % self.num_players
+
+
+# todo: should be in the same module as sauspiel, but as free function
+def get_game_results(teams, scores_per_team):
+    if sum(scores_per_team) != 120:
+        raise Exception('Total score at game end must be 120')
+
+    player_score = scores_per_team[0]
+    if player_score == 0:
+        pass
+    if 0 < player_score <= 30:
+        pass
+    if 30 < player_score <= 60:
+        pass
+    if 60 < player_score <= 90:
+        pass
+    if 90 < player_score < 120:
+        pass
+    if player_score == 120:
+        pass
 
 
 if __name__ == '__main__':
