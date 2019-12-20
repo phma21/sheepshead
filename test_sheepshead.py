@@ -1,7 +1,7 @@
 import pytest
 
 from deck import *
-from sheepshead import Sauspiel, Game, Tick, get_game_results
+from sheepshead import Sauspiel, Game, Tick, get_game_results, Turn
 
 
 def setup_eichel_rufspiel():
@@ -118,6 +118,13 @@ def test_allowed_cards_rufsau_empty_trick_3():
            {Card(GRAS, SAU), Card(SCHELLEN, OBER)}
 
 
+def test_allowed_cards_rufsau_empty_trick_4():
+    layed_out_cards = []
+    player_cards = {Card(GRAS, NEUN), Card(SCHELLEN, OBER), Card(GRAS, KOENIG), Card(GRAS, SIEBEN)}
+
+    assert setup_gras_rufspiel().allowed_cards(layed_out_cards, player_cards) == player_cards
+
+
 def test_allowed_cards_rufsau_empty_trick_davonlaufen():
     layed_out_cards = []
     player_cards = {Card(GRAS, NEUN), Card(SCHELLEN, OBER), Card(GRAS, SAU), Card(GRAS, KOENIG), Card(GRAS, SIEBEN)}
@@ -188,6 +195,7 @@ def test_play_card():
     assert game.current_player == 0
     assert len(game.player_cards[0]) == 1
     assert game.get_scores_per_player() == (0, 0, 0, 0)
+    assert not game.is_finished()
 
     game.play_card(Card(HERZ, OBER))
 
@@ -209,6 +217,7 @@ def test_play_card():
         Tick([Card(HERZ, OBER), Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ACHT)], 1)]
 
     assert game.get_scores_per_player() == (0, 16, 0, 0)
+    assert game.is_finished()
 
 
 def setup_3_player_2_cards_sauspiel():
@@ -217,6 +226,14 @@ def setup_3_player_2_cards_sauspiel():
                     {Card(EICHEL, SAU), Card(EICHEL, ACHT)}]
 
     return Game(Sauspiel(player_cards, Card(EICHEL, SAU), playmaker=0), player_cards)
+
+
+def test_get_current_turn():
+    game = setup_3_player_2_cards_sauspiel()
+
+    assert game.get_current_turn() == Turn(0, 0, {Card(HERZ, OBER), Card(EICHEL, KOENIG)}, {Card(HERZ, OBER), Card(EICHEL, KOENIG)})
+    game.play_card(Card(HERZ, OBER))
+    assert game.get_current_turn() == Turn(0, 1, {Card(GRAS, UNTER), Card(GRAS, ACHT)}, {Card(GRAS, UNTER)})
 
 
 def test_play_sauspiel_disallowed_card():
@@ -240,6 +257,7 @@ def test_play_sauspiel_until_end():
     tick_2 = Tick([Card(EICHEL, KOENIG), Card(GRAS, ACHT), Card(EICHEL, SAU)], scoring_player=2)
 
     assert game.teams == ({0, 2}, {1})
+    assert not game.is_finished()
 
     game.play_card(Card(HERZ, OBER))
     game.play_card(Card(GRAS, UNTER))
@@ -260,6 +278,7 @@ def test_play_sauspiel_until_end():
     assert game.get_scores_per_player() == (5, 0, 15)
 
     assert game.get_scores_per_team() == (20, 0)
+    assert game.is_finished()
 
 
 def test_game_results_score_missmatch():
@@ -271,28 +290,28 @@ def test_game_results():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (61, 59)
 
-    # todo
+    assert get_game_results(teams, scores_per_team) == (-10, 10, 10, -10)
 
 
 def test_game_results_2():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (60, 60)
 
-    # todo
+    assert get_game_results(teams, scores_per_team) == (10, -10, -10, 10)
 
 
 def test_game_results_3():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (90, 30)
 
-    # todo
+    assert get_game_results(teams, scores_per_team) == (-10, 10, 10, -10)
 
 
 def test_game_results_4():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (91, 29)
 
-    # todo
+    assert get_game_results(teams, scores_per_team) == (-20, 20, 20, -20)
 
 
 def test_game_results_5():
@@ -300,20 +319,21 @@ def test_game_results_5():
     scores_per_team = (120, 0)
 
     # todo: rules correct?
+    assert get_game_results(teams, scores_per_team) == (-30, 30, 30, -30)
 
 
 def test_game_results_6():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (31, 89)
 
-    # todo
+    assert get_game_results(teams, scores_per_team) == (10, -10, -10, 10)
 
 
 def test_game_results_7():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (30, 90)
 
-    # todo
+    assert get_game_results(teams, scores_per_team) == (20, -20, -20, 20)
 
 
 def test_game_results_8():
@@ -321,6 +341,7 @@ def test_game_results_8():
     scores_per_team = (0, 120)
 
     # todo: rules correct?
+    assert get_game_results(teams, scores_per_team) == (30, -30, -30, 30)
 
 
 def test_game_results_laufende():

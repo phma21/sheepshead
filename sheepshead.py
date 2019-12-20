@@ -1,8 +1,9 @@
 from collections import namedtuple
+from copy import deepcopy
 from typing import Tuple
 
 import numpy as np
-
+from timeit import timeit
 from deck import *
 
 
@@ -33,7 +34,7 @@ class BasicTrumpGame:
                               and c.face in self.NON_TRUMP_FACE_RANKS}
 
         if len(matching_cards) == 0:
-            return player_cards
+            return deepcopy(player_cards)
         else:
             return matching_cards
 
@@ -52,31 +53,21 @@ class BasicTrumpGame:
         return np.argmin([card_to_power(card) for card in cards])
 
 
-# todo: implement game start and end, play first random agents on sauspiel
-# money value of game
-
-# 1 test mit vordefinierten karten, komplettes spiel
-# 1 test was passiert wenn karte gespielt wird die nicht in hand ist
-#                                           die schonmal gespielt wurde
-#                                           die nicht erlaubt ist
-# test über geld wert vom spiel
-
-
 class Sauspiel:
 
     def __init__(self, player_cards: List[Set[Card]], rufsau: Card, playmaker: int, davon_laufen=False):
-        self.rufsau = rufsau
+        self.rufsau = deepcopy(rufsau)
         self.davon_laufen = davon_laufen
         self.basic_game = BasicTrumpGame()
         self.teams = self._determine_teams(player_cards, playmaker)
 
     # chain this function after applying general_trump_game_rule
     def apply_rufsau_rule(self, layed_out_cards: List[Card], len_player_cards: int, allowed_cards: Set[Card]) -> Set[Card]:
-        if self.rufsau in allowed_cards or len_player_cards != 1:
+        if self.rufsau in allowed_cards and len_player_cards != 1:
             if len(layed_out_cards) == 0:  # First card on the table
                 call_suits = self.filter_rufsau_accompanying_cards(allowed_cards)
                 if self.davon_laufen and len(call_suits) >= 3:
-                    return allowed_cards
+                    return deepcopy(allowed_cards)
                 else:  # len(call_suits) < 3
                     return {card for card in allowed_cards if card not in call_suits}
             else:  # len(layed_out_cards) > 0
@@ -85,14 +76,15 @@ class Sauspiel:
                 else:  # Sau was not searched for, all cards except for Sau are allowed
                     return {card for card in allowed_cards if card != self.rufsau}
         else:
-            return allowed_cards
+            return deepcopy(allowed_cards)
 
     def winning_position(self, *args):
         return self.basic_game.winning_position(*args)
 
     def allowed_cards(self, layed_out_cards: List[Card], player_cards: Set[Card]) -> Set[Card]:
         allowed_cards_base = self.basic_game.allowed_cards(layed_out_cards, player_cards)
-        return self.apply_rufsau_rule(layed_out_cards, len(player_cards), allowed_cards_base)
+        allowed_cards_sauspiel = self.apply_rufsau_rule(layed_out_cards, len(player_cards), allowed_cards_base)
+        return allowed_cards_sauspiel
 
     def filter_rufsau_accompanying_cards(self, cards: Set[Card]) -> Set[Card]:
         return {card for card in cards if
@@ -117,10 +109,15 @@ class Sauspiel:
 Tick = namedtuple('Tick', 'cards scoring_player')
 
 
+class Turn(namedtuple('Turn', 'round player hand allowed_cards')):
+    def __str__(self):
+        return f'Round {self.round} player {self.player} with {self.hand} is allowed to play {self.allowed_cards}'
+
+
 class Game:
     def __init__(self, mode, player_cards: List[Set[Card]], starting_player=0):
         self.mode: Sauspiel = mode
-        self.player_cards: List[Set[Card]] = player_cards
+        self.player_cards: List[Set[Card]] = deepcopy(player_cards)
         self.num_players = len(player_cards)
         self.past_ticks: List[Tick] = []
         self.current_trick = []
@@ -134,6 +131,12 @@ class Game:
     @property
     def teams(self):
         return self.mode.teams
+
+    def is_finished(self):
+        return not any(self.player_cards)
+
+    def get_round(self):
+        return len(self.past_ticks)
 
     def get_scores_per_player(self) -> Tuple[int]:
         scores = [0] * self.num_players
@@ -151,16 +154,19 @@ class Game:
 
         return sum(playmaker_scores), sum(non_player_scores)
 
+    def _get_current_player_hand(self):
+        return self.player_cards[self.current_player]
+
     def play_card(self, card):
         # Player must hold the card in hand
-        if card not in self.player_cards[self.current_player]:
+        if card not in self._get_current_player_hand():
             raise Exception("Attempted to play a card which isn't yours!")
         # Card must be allowed to play
-        if card not in self.mode.allowed_cards(self.current_trick, self.player_cards[self.current_player]):
+        if card not in self.mode.allowed_cards(self.current_trick, self._get_current_player_hand()):
             raise Exception("You are not allowed to play this card")
 
         # Execute move
-        self.player_cards[self.current_player].remove(card)
+        self._get_current_player_hand().remove(card)
         self.current_trick.append(card)
 
         # tick complete
@@ -175,31 +181,57 @@ class Game:
         else:  # tick not complete
             self.current_player = (self.current_player + 1) % self.num_players
 
+    def get_current_turn(self):
+        return Turn(self.get_round(), self.current_player, self._get_current_player_hand(),
+                    self.mode.allowed_cards(self.current_trick, self._get_current_player_hand()))
 
-# todo: should be in the same module as sauspiel, but as free function
-def get_game_results(teams, scores_per_team):
+
+# todo: should be in the same module as sauspiel, but as free function?
+def get_game_results(teams, scores_per_team) -> Tuple[int]:
+
+    num_players = len(teams[0]) + len(teams[1])
+
+    def create_result(score: int):
+        return tuple(score if player in teams[0] else -score for player in range(num_players))
+
     if sum(scores_per_team) != 120:
         raise Exception('Total score at game end must be 120')
 
     player_score = scores_per_team[0]
     if player_score == 0:
-        pass
+        return create_result(-SCHNEIDER_SCHWARZ)
     if 0 < player_score <= 30:
-        pass
+        return create_result(-SCHNEIDER)
     if 30 < player_score <= 60:
-        pass
+        return create_result(-SPIEL)
     if 60 < player_score <= 90:
-        pass
+        return create_result(SPIEL)
     if 90 < player_score < 120:
-        pass
+        return create_result(SCHNEIDER)
     if player_score == 120:
-        pass
+        return create_result(SCHNEIDER_SCHWARZ)
+
+
+SCHNEIDER_SCHWARZ = 30
+SCHNEIDER = 20
+SPIEL = 10
+
+
+def play_random_game():
+    player_cards = create_shuffled_player_hands()
+    sauspiel = Sauspiel(player_cards, rufsau=Card(EICHEL, SAU), playmaker=0)
+    game = Game(sauspiel, player_cards, starting_player=0)
+
+    while not game.is_finished():
+        turn = game.get_current_turn()
+        # print(turn)
+        card = turn.allowed_cards.pop()
+        # print(f'Play {card}')
+        game.play_card(card)
 
 
 if __name__ == '__main__':
-
-    deck = create_shuffled_deck()
-
-    # sauspiel = Sauspiel()
-
-    # print(sauspiel.TRUMP_ORDER)
+    num_iterations = 1000
+    seconds = timeit(play_random_game, number=num_iterations)
+    print(f'{num_iterations} games took {seconds} seconds')
+    print(f'That is {num_iterations / seconds} iterations per second')
