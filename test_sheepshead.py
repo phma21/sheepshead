@@ -1,7 +1,8 @@
 import pytest
 
 from deck import *
-from sheepshead import Sauspiel, Game, Tick, get_game_results, Turn
+from sheepshead import Game, Tick, get_game_results, Turn
+from rules import Sauspiel, Solo
 
 
 def setup_eichel_rufspiel():
@@ -279,6 +280,37 @@ def test_play_sauspiel_until_end():
 
     assert game.get_scores_per_team() == (20, 0)
     assert game.is_finished()
+
+
+# todo: test for wenz:
+# unter gewinnt vor ober, herz wird gestochen von z.b. schellen
+# ober gehört bei allowed cards zum normalen zeug
+# ober wird von koenig gestochen
+# teams
+
+
+# todo: test for geier:
+# unter sind kein trumpf, wird von z.b. sau gestochen
+# trumpffrabe sticht herz
+# unter gehört zu normalen farben
+# unter wird von Zehn gestochen
+# teams
+
+# todo: test for ramsch
+# -> needs change to how game results are calculated!
+
+
+def test_solo():
+    player_cards = [{Card(HERZ, ZEHN)}, {Card(GRAS, KOENIG)}]
+    mode = Solo(player_cards, playmaker=0, trump=GRAS)
+    game = Game(mode, player_cards)
+
+    assert game.teams == ({0}, {1})
+
+    game.play_card(Card(HERZ, ZEHN))
+    game.play_card(Card(GRAS, KOENIG))
+
+    assert game.past_ticks[0].scoring_player == 1
 
 
 def test_game_results_score_missmatch():
