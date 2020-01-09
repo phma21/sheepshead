@@ -1,9 +1,10 @@
 from collections import namedtuple
 from copy import deepcopy
 from timeit import timeit
-from typing import Tuple
+from typing import Tuple, List, Set
 
-from deck import *
+from card_types import *
+from deck import count_score, create_shuffled_player_hands
 from rules import Sauspiel
 
 Tick = namedtuple('Tick', 'cards scoring_player')

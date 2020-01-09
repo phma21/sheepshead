@@ -49,6 +49,48 @@ def test_winning_position_no_trump_2():
     assert setup_eichel_rufspiel().winning_position(cards) == 0
 
 
+def test_winning_position_wenz():
+    cards = [Card(EICHEL, OBER), Card(GRAS, KOENIG), Card(SCHELLEN, UNTER)]
+
+    assert Wenz(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 2
+
+
+def test_winning_position_wenz_2():
+    cards = [Card(GRAS, OBER), Card(GRAS, KOENIG), Card(SCHELLEN, SAU)]
+
+    assert Wenz(create_shuffled_player_hands(), 0, HERZ).winning_position(cards) == 1
+
+
+def test_winning_position_wenz_3():
+    cards = [Card(GRAS, KOENIG), Card(GRAS, OBER)]
+
+    assert Wenz(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 0
+
+
+def test_winning_position_geier():
+    cards = [Card(HERZ, OBER), Card(GRAS, KOENIG), Card(GRAS, UNTER)]
+
+    assert Geier(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 0
+
+
+def test_winning_position_geier_2():
+    cards = [Card(GRAS, KOENIG), Card(GRAS, UNTER)]
+
+    assert Geier(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 0
+
+
+def test_winning_position_geier_3():
+    cards = [Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ZEHN), Card(HERZ, ACHT)]
+
+    assert Geier(create_shuffled_player_hands(), 0, HERZ).winning_position(cards) == 3
+
+
+def test_winning_position_geier_4():
+    cards = [Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ZEHN), Card(HERZ, ACHT)]
+
+    assert Geier(create_shuffled_player_hands(), 0, EICHEL).winning_position(cards) == 1
+
+
 def test_score():
     deck = create_shuffled_deck()
 
@@ -324,18 +366,15 @@ def test_play_sauspiel_until_end():
 
 
 # todo: test for wenz:
-# unter gewinnt vor ober, herz wird gestochen von z.b. schellen
-# ober wird von koenig gestochen
 # teams
-# wer gewinnt?
 
 
 # todo: test for geier:
-# unter sind kein trumpf, wird von z.b. sau gestochen
-# trumpffrabe sticht herz
-# unter wird von Zehn gestochen
 # teams
-# wer gewinnt?
+
+# todo: test game results fuer:
+# teams 1 vs 3
+# teams 1 vs 1 vs 1
 
 # todo: test for ramsch
 # -> needs change to how game results are calculated!

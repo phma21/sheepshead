@@ -4,7 +4,7 @@ from typing import List, Set, Tuple
 
 import numpy as np
 
-from deck import HERZ, OBER, UNTER, Face, Card, Suit
+from card_types import *
 
 
 class BasicTrumpGame(ABC):
