@@ -1,8 +1,10 @@
 import pytest
 
-from deck import *
+from card_types import *
+from deck import create_shuffled_player_hands, create_shuffled_deck, count_score
+
 from sheepshead import Game, Tick, get_game_results, Turn
-from rules import Sauspiel, Solo
+from rules import Sauspiel, Solo, Wenz, Geier
 
 
 def setup_eichel_rufspiel():
@@ -173,6 +175,45 @@ def test_allowed_cards_rufsau_search_2():
         == {Card(SCHELLEN, SAU)}
 
 
+def test_wenz_allowed_cards_not_trump():
+    layed_out_cards = [Card(HERZ, KOENIG)]
+    player_cards = {Card(HERZ, SAU), Card(EICHEL, ZEHN), Card(HERZ, OBER), Card(HERZ, UNTER)}
+
+    eichel_wenz = Wenz(create_shuffled_player_hands(), playmaker=1, trump=EICHEL)
+
+    assert eichel_wenz.allowed_cards(layed_out_cards, player_cards) \
+        == {Card(HERZ, SAU), Card(HERZ, OBER)}
+
+
+def test_wenz_allowed_cards_trump():
+    layed_out_cards = [Card(EICHEL, KOENIG)]
+    player_cards = {Card(HERZ, SAU), Card(EICHEL, ZEHN), Card(HERZ, OBER), Card(HERZ, UNTER)}
+
+    eichel_wenz = Wenz(create_shuffled_player_hands(), playmaker=1, trump=EICHEL)
+
+    assert eichel_wenz.allowed_cards(layed_out_cards, player_cards) \
+        == {Card(EICHEL, ZEHN), Card(HERZ, UNTER)}
+
+
+def test_geier_allowed_cards_trump():
+    layed_out_cards = [Card(HERZ, KOENIG)]
+    player_cards = {Card(HERZ, UNTER), Card(HERZ, OBER), Card(HERZ, ACHT), Card(GRAS, UNTER)}
+
+    herz_geier = Geier(create_shuffled_player_hands(), playmaker=1, trump=HERZ)
+
+    assert herz_geier.allowed_cards(layed_out_cards, player_cards) == \
+           {Card(HERZ, OBER), Card(HERZ, ACHT), Card(HERZ, UNTER)}
+
+
+def test_geier_allowed_cards_no_trump():
+    layed_out_cards = [Card(HERZ, KOENIG), Card(EICHEL, ZEHN)]
+    player_cards = {Card(GRAS, UNTER), Card(GRAS, OBER), Card(HERZ, SAU)}
+
+    schellen_geier = Geier(create_shuffled_player_hands(), playmaker=1, trump=SCHELLEN)
+
+    assert schellen_geier.allowed_cards(layed_out_cards, player_cards) == {Card(HERZ, SAU)}
+
+
 class DummyMode:
 
     def winning_position(self, _):
@@ -284,17 +325,17 @@ def test_play_sauspiel_until_end():
 
 # todo: test for wenz:
 # unter gewinnt vor ober, herz wird gestochen von z.b. schellen
-# ober gehört bei allowed cards zum normalen zeug
 # ober wird von koenig gestochen
 # teams
+# wer gewinnt?
 
 
 # todo: test for geier:
 # unter sind kein trumpf, wird von z.b. sau gestochen
 # trumpffrabe sticht herz
-# unter gehört zu normalen farben
 # unter wird von Zehn gestochen
 # teams
+# wer gewinnt?
 
 # todo: test for ramsch
 # -> needs change to how game results are calculated!
