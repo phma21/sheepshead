@@ -87,37 +87,6 @@ class Game:
                     self.mode.allowed_cards(self.current_trick, self._get_current_player_hand()))
 
 
-# Applys to every sauspiel or solo
-def get_game_results(teams, scores_per_team) -> Tuple[int]:
-
-    num_players = len(teams[0]) + len(teams[1])
-
-    def create_result(score: int):
-        return tuple(score if player in teams[0] else -score for player in range(num_players))
-
-    if sum(scores_per_team) != 120:
-        raise Exception('Total score at game end must be 120')
-
-    player_score = scores_per_team[0]
-    if player_score == 0:
-        return create_result(-SCHNEIDER_SCHWARZ)
-    if 0 < player_score <= 30:
-        return create_result(-SCHNEIDER)
-    if 30 < player_score <= 60:
-        return create_result(-SPIEL)
-    if 60 < player_score <= 90:
-        return create_result(SPIEL)
-    if 90 < player_score < 120:
-        return create_result(SCHNEIDER)
-    if player_score == 120:
-        return create_result(SCHNEIDER_SCHWARZ)
-
-
-SCHNEIDER_SCHWARZ = 30
-SCHNEIDER = 20
-SPIEL = 10
-
-
 def play_random_game():
     player_cards = create_shuffled_player_hands()
     sauspiel = Sauspiel(player_cards, rufsau=Card(EICHEL, SAU), playmaker=0)

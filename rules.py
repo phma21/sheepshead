@@ -1,10 +1,14 @@
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from copy import deepcopy
 from typing import List, Set, Tuple
 
 import numpy as np
 
 from card_types import *
+
+
+StandardTariff = namedtuple('StandardTariff', 'spiel schneider schwarz')
 
 
 class BasicTrumpGame(ABC):
@@ -59,6 +63,7 @@ class BasicTrumpGame(ABC):
 
 
 class Sauspiel(BasicTrumpGame):
+    TARIFF = StandardTariff(spiel=10, schneider=20, schwarz=30)
 
     def __init__(self, player_cards: List[Set[Card]], rufsau: Card, playmaker: int, davon_laufen=False):
         super().__init__()
@@ -111,8 +116,12 @@ class Sauspiel(BasicTrumpGame):
 
         return players, non_players
 
+    def game_result(self, scores_per_team):
+        return create_standard_game_result(self.teams, scores_per_team, self.TARIFF)
+
 
 class SinglePlayerGame(BasicTrumpGame):
+    TARIFF = StandardTariff(spiel=50, schneider=60, schwarz=70)
 
     def __init__(self, player_cards: List[Set[Card]], playmaker: int, trump: Suit, face_trump_order: Tuple[Face, ...]):
         super().__init__(trump=trump, face_trump_order=face_trump_order)
@@ -121,6 +130,9 @@ class SinglePlayerGame(BasicTrumpGame):
     @property
     def teams(self):
         return self._teams
+
+    def game_result(self, scores_per_team):
+        return create_standard_game_result(self.teams, scores_per_team, self.TARIFF)
 
 
 class Solo(SinglePlayerGame):
@@ -139,6 +151,8 @@ class Geier(SinglePlayerGame):
 
 
 class Ramsch(BasicTrumpGame):
+    TARIFF = namedtuple('RamschTariff', 'spiel jungfrau')(spiel=10, jungfrau=20)
+
     @property
     def teams(self):
         return self._teams
@@ -148,7 +162,44 @@ class Ramsch(BasicTrumpGame):
 
         self._teams = tuple({i} for i in range(len(player_cards)))
 
+    def game_result(self, scores_per_team):
+        raise NotImplementedError
+
 
 def determine_teams_one_player_game(player_cards, playmaker):
     num_players = len(player_cards)
     return {playmaker}, set(range(num_players)) - {playmaker}
+
+
+# Applys to every sauspiel or solo
+# todo: factor and tarif
+def create_standard_game_result(teams, scores_per_team, tariff: StandardTariff) -> Tuple[int]:
+
+    num_players = len(teams[0]) + len(teams[1])
+
+    player_non_player_ratio = len(teams[0]) / len(teams[1])
+
+    def create_result(score: int):
+        return tuple(score if player in teams[0] else -score for player in range(num_players))
+
+    if sum(scores_per_team) != 120:
+        raise Exception('Total score at game end must be 120')
+
+    player_score = scores_per_team[0]
+    if player_score == 0:
+        return create_result(-SCHNEIDER_SCHWARZ)
+    if 0 < player_score <= 30:
+        return create_result(-SCHNEIDER)
+    if 30 < player_score <= 60:
+        return create_result(-SPIEL)
+    if 60 < player_score <= 90:
+        return create_result(SPIEL)
+    if 90 < player_score < 120:
+        return create_result(SCHNEIDER)
+    if player_score == 120:
+        return create_result(SCHNEIDER_SCHWARZ)
+
+
+SCHNEIDER_SCHWARZ = 30
+SCHNEIDER = 20
+SPIEL = 10
