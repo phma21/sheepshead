@@ -141,10 +141,12 @@ class Geier(SinglePlayerGame):
 class Ramsch(BasicTrumpGame):
     @property
     def teams(self):
-        return {0}, {1}, {2}, {3}
+        return self._teams
 
-    def __init__(self):
+    def __init__(self, player_cards: List[Set[Card]]):
         super().__init__()
+
+        self._teams = tuple({i} for i in range(len(player_cards)))
 
 
 def determine_teams_one_player_game(player_cards, playmaker):

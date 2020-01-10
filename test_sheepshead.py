@@ -4,7 +4,7 @@ from card_types import *
 from deck import create_shuffled_player_hands, create_shuffled_deck, count_score
 
 from sheepshead import Game, Tick, get_game_results, Turn
-from rules import Sauspiel, Solo, Wenz, Geier
+from rules import Sauspiel, Solo, Wenz, Geier, Ramsch
 
 
 def setup_eichel_rufspiel():
@@ -365,13 +365,6 @@ def test_play_sauspiel_until_end():
     assert game.is_finished()
 
 
-# todo: test for wenz:
-# teams
-
-
-# todo: test for geier:
-# teams
-
 # todo: test game results fuer:
 # teams 1 vs 3
 # teams 1 vs 1 vs 1
@@ -497,13 +490,44 @@ def test_resolve_winning_player_4():
     assert expected_winning_player == Game(None, list(range(4))).resolve_tick_winner(current_player, winning_pos)
 
 
-def test_determine_teams():
+def test_teams_sauspiel():
     player_cards = [{Card(GRAS, NEUN), Card(SCHELLEN, OBER)},
                     {Card(GRAS, SAU), Card(GRAS, KOENIG)},
                     {Card(GRAS, OBER), Card(HERZ, SAU)},
                     {Card(GRAS, ACHT), Card(EICHEL, SAU)}]
     playmaker = 3
 
-    rufspiel = Sauspiel(create_shuffled_player_hands(), Card(GRAS, SAU), playmaker)
+    rufspiel = Sauspiel(player_cards, Card(GRAS, SAU), playmaker)
 
-    assert rufspiel._determine_teams(player_cards, playmaker) == ({1, 3}, {0, 2})
+    assert rufspiel.teams == ({1, 3}, {0, 2})
+
+
+def test_teams_wenz():
+    eichel_wenz = Wenz(create_shuffled_player_hands(), playmaker=2, trump=EICHEL)
+
+    assert eichel_wenz.teams == ({2}, {0, 1, 3})
+
+
+def test_teams_solo():
+    eichel_solo = Solo(create_shuffled_player_hands(), playmaker=0, trump=EICHEL)
+
+    assert eichel_solo.teams == ({0}, {1, 2, 3})
+
+
+def test_teams_geier():
+    player_cards = [set(),
+                    set(),
+                    set()]
+
+    rufspiel = Geier(player_cards, playmaker=1, trump=HERZ)
+
+    assert rufspiel.teams == ({1}, {0, 2})
+
+
+def test_teams_ramsch():
+    player_cards = [set(),
+                    set(),
+                    set()]
+    ramsch = Ramsch(player_cards)
+
+    assert ramsch.teams == ({0}, {1}, {2})

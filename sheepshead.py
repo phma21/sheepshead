@@ -5,7 +5,7 @@ from typing import Tuple, List, Set
 
 from card_types import *
 from deck import count_score, create_shuffled_player_hands
-from rules import Sauspiel
+from rules import Sauspiel, BasicTrumpGame
 
 Tick = namedtuple('Tick', 'cards scoring_player')
 
@@ -17,7 +17,7 @@ class Turn(namedtuple('Turn', 'round player hand allowed_cards')):
 
 class Game:
     def __init__(self, mode, player_cards: List[Set[Card]], starting_player=0):
-        self.mode: Sauspiel = mode
+        self.mode: BasicTrumpGame = mode
         self.player_cards: List[Set[Card]] = deepcopy(player_cards)
         self.num_players = len(player_cards)
         self.past_ticks: List[Tick] = []
