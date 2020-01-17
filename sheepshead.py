@@ -64,7 +64,7 @@ class Game:
             raise Exception("Attempted to play a card which isn't yours!")
         # Card must be allowed to play
         if card not in self.mode.allowed_cards(self.current_trick, self._get_current_player_hand()):
-            raise Exception("You are not allowed to play this card")
+            raise Exception("You are not allowed to play this card!")
 
         # Execute move
         self._get_current_player_hand().remove(card)
@@ -86,6 +86,12 @@ class Game:
         return Turn(self.get_round(), self.current_player, self._get_current_player_hand(),
                     self.mode.allowed_cards(self.current_trick, self._get_current_player_hand()))
 
+    def get_game_result(self):
+        if self.is_finished():
+            return self.mode.game_result(self.get_scores_per_team())
+        else:
+            raise Exception("Game is not over yet!")
+
 
 def play_random_game():
     player_cards = create_shuffled_player_hands()
@@ -98,10 +104,16 @@ def play_random_game():
         card = turn.allowed_cards.pop()
         # print(f'Play {card}')
         game.play_card(card)
+    print(game.get_game_result())
+    if any(r > 20 for r in game.get_game_result()):
+        print("error!")
+
+
+# todo: game play test for ramsch
 
 
 if __name__ == '__main__':
-    num_iterations = 1000
+    num_iterations = 10
     seconds = timeit(play_random_game, number=num_iterations)
     print(f'{num_iterations} games took {seconds} seconds')
     print(f'That is {num_iterations / seconds} iterations per second')
