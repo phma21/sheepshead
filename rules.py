@@ -7,7 +7,6 @@ import numpy as np
 
 from card_types import *
 
-
 StandardTariff = namedtuple('StandardTariff', 'spiel schneider schwarz')
 
 
@@ -58,7 +57,11 @@ class BasicTrumpGame(ABC):
 
     @property
     @abstractmethod
-    def teams(self):
+    def teams(self) -> Tuple[Set[int], ...]:
+        pass
+
+    @abstractmethod
+    def game_result(self, scores_per_team) -> Tuple[int, ...]:
         pass
 
 
@@ -163,7 +166,29 @@ class Ramsch(BasicTrumpGame):
         self._teams = tuple({i} for i in range(len(player_cards)))
 
     def game_result(self, scores_per_team):
-        raise NotImplementedError
+        return create_ramsch_game_result(self.teams, scores_per_team, self.TARIFF)
+
+
+def create_ramsch_game_result(teams, scores_per_team, tariff):
+    assert teams == ({0}, {1}, {2}) or teams == ({0}, {1}, {2}, {3})
+
+    scores_per_team_np = np.array(scores_per_team)
+    looser = int(np.argmax(scores_per_team))
+
+    zero_winners = np.where(scores_per_team_np == 0)[0]
+
+    non_zero_winners = np.where(scores_per_team_np != 0)[0]
+    non_zero_winners = non_zero_winners[non_zero_winners != looser]
+
+    def create_result(player):
+        if player == looser:
+            return - len(zero_winners) * tariff.jungfrau - len(non_zero_winners) * tariff.spiel
+        if np.isin(player, zero_winners):
+            return tariff.jungfrau
+        if np.isin(player, non_zero_winners):
+            return tariff.spiel
+
+    return tuple(create_result(player) for player in range(len(teams)))
 
 
 def determine_teams_one_player_game(player_cards, playmaker):
@@ -171,35 +196,28 @@ def determine_teams_one_player_game(player_cards, playmaker):
     return {playmaker}, set(range(num_players)) - {playmaker}
 
 
-# Applys to every sauspiel or solo
-# todo: factor and tarif
-def create_standard_game_result(teams, scores_per_team, tariff: StandardTariff) -> Tuple[int]:
+def create_standard_game_result(teams, scores_per_team, tariff: StandardTariff) -> Tuple[int, ...]:
 
     num_players = len(teams[0]) + len(teams[1])
 
-    player_non_player_ratio = len(teams[0]) / len(teams[1])
+    non_player_to_player_ratio = int(len(teams[1]) / len(teams[0]))
 
     def create_result(score: int):
-        return tuple(score if player in teams[0] else -score for player in range(num_players))
+        return tuple(score * non_player_to_player_ratio if player in teams[0] else -score for player in range(num_players))
 
     if sum(scores_per_team) != 120:
         raise Exception('Total score at game end must be 120')
 
     player_score = scores_per_team[0]
     if player_score == 0:
-        return create_result(-SCHNEIDER_SCHWARZ)
+        return create_result(-tariff.schwarz)
     if 0 < player_score <= 30:
-        return create_result(-SCHNEIDER)
+        return create_result(-tariff.schneider)
     if 30 < player_score <= 60:
-        return create_result(-SPIEL)
+        return create_result(-tariff.spiel)
     if 60 < player_score <= 90:
-        return create_result(SPIEL)
+        return create_result(tariff.spiel)
     if 90 < player_score < 120:
-        return create_result(SCHNEIDER)
+        return create_result(tariff.schneider)
     if player_score == 120:
-        return create_result(SCHNEIDER_SCHWARZ)
-
-
-SCHNEIDER_SCHWARZ = 30
-SCHNEIDER = 20
-SPIEL = 10
+        return create_result(tariff.schwarz)

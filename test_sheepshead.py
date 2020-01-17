@@ -2,9 +2,9 @@ import pytest
 
 from card_types import *
 from deck import create_shuffled_player_hands, create_shuffled_deck, count_score
-
+from rules import Sauspiel, Solo, Wenz, Geier, Ramsch, create_standard_game_result, \
+    create_ramsch_game_result, SinglePlayerGame
 from sheepshead import Game, Tick, Turn
-from rules import Sauspiel, Solo, Wenz, Geier, Ramsch, create_standard_game_result
 
 
 def setup_eichel_rufspiel():
@@ -388,35 +388,35 @@ def test_solo():
 
 def test_game_results_score_missmatch():
     with pytest.raises(Exception):
-        create_standard_game_result(None, (19, 5))
+        create_standard_game_result(({1, 2}, {3, 4}), (19, 5), Sauspiel.TARIFF)
 
 
 def test_game_results():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (61, 59)
 
-    assert create_standard_game_result(teams, scores_per_team) == (-10, 10, 10, -10)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (-10, 10, 10, -10)
 
 
 def test_game_results_2():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (60, 60)
 
-    assert create_standard_game_result(teams, scores_per_team) == (10, -10, -10, 10)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (10, -10, -10, 10)
 
 
 def test_game_results_3():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (90, 30)
 
-    assert create_standard_game_result(teams, scores_per_team) == (-10, 10, 10, -10)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (-10, 10, 10, -10)
 
 
 def test_game_results_4():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (91, 29)
 
-    assert create_standard_game_result(teams, scores_per_team) == (-20, 20, 20, -20)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (-20, 20, 20, -20)
 
 
 def test_game_results_5():
@@ -424,21 +424,21 @@ def test_game_results_5():
     scores_per_team = (120, 0)
 
     # todo: rules correct?
-    assert create_standard_game_result(teams, scores_per_team) == (-30, 30, 30, -30)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (-30, 30, 30, -30)
 
 
 def test_game_results_6():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (31, 89)
 
-    assert create_standard_game_result(teams, scores_per_team) == (10, -10, -10, 10)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (10, -10, -10, 10)
 
 
 def test_game_results_7():
     teams = ({1, 2}, {0, 3})
     scores_per_team = (30, 90)
 
-    assert create_standard_game_result(teams, scores_per_team) == (20, -20, -20, 20)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (20, -20, -20, 20)
 
 
 def test_game_results_8():
@@ -446,11 +446,11 @@ def test_game_results_8():
     scores_per_team = (0, 120)
 
     # todo: rules correct?
-    assert create_standard_game_result(teams, scores_per_team) == (30, -30, -30, 30)
+    assert create_standard_game_result(teams, scores_per_team, Sauspiel.TARIFF) == (30, -30, -30, 30)
 
 
 def test_game_results_laufende():
-    # TODO: Laufende, won't implement for now
+    # Won't implement!
     pass
 
 
@@ -458,21 +458,21 @@ def test_game_results_solo():
     teams = ({1}, {0, 2})
     scores_per_team = (61, 59)
 
-    assert create_standard_game_result(teams, scores_per_team) == (-50, 100, -50)
+    assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (-50, 100, -50)
 
 
 def test_game_results_solo_2():
     teams = ({1}, {0, 2})
     scores_per_team = (60, 60)
 
-    assert create_standard_game_result(teams, scores_per_team) == (50, -100, 50)
+    assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (50, -100, 50)
 
 
 def test_game_results_solo_3():
     teams = ({1}, {0, 2})
     scores_per_team = (91, 29)
 
-    assert create_standard_game_result(teams, scores_per_team) == (-60, 120, -60)
+    assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (-60, 120, -60)
 
 
 def test_game_results_solo_4():
@@ -480,7 +480,7 @@ def test_game_results_solo_4():
     scores_per_team = (0, 120)
 
     # todo: rules correct?
-    assert create_standard_game_result(teams, scores_per_team) == (70, -140, 70)
+    assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (70, -140, 70)
 
 
 def test_game_results_solo_5():
@@ -488,7 +488,7 @@ def test_game_results_solo_5():
     scores_per_team = (90, 30)
 
     # todo: rules correct?
-    assert create_standard_game_result(teams, scores_per_team) == (-50, 150, -50, -50)
+    assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (-50, 150, -50, -50)
 
 
 def test_game_results_solo_6():
@@ -496,14 +496,37 @@ def test_game_results_solo_6():
     scores_per_team = (110, 10)
 
     # todo: rules correct?
-    assert create_standard_game_result(teams, scores_per_team) == (-60, 180, -60, -60)
+    assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (-60, 180, -60, -60)
 
 
-def test_game_results_ramsch():
-    teams = ({1}, {0}, {2})
+def test_game_results_ramsch_3_players():
+    teams = ({0}, {1}, {2})
     scores_per_team = (30, 30, 60)
 
-    assert create_standard_game_result(teams, scores_per_team) == (0, 120, -60)
+    assert create_ramsch_game_result(teams, scores_per_team, Ramsch.TARIFF) == (10, 10, -20)
+
+
+def test_game_results_ramsch_4_players():
+    teams = ({0}, {1}, {2}, {3})
+    scores_per_team = (30, 30, 50, 10)
+
+    assert create_ramsch_game_result(teams, scores_per_team, Ramsch.TARIFF) == (10, 10, -30, 10)
+
+
+def test_game_results_ramsch__even():
+    teams = ({0}, {1}, {2}, {3})
+    scores_per_team = (0, 60, 60, 0)
+
+    # The game rules for this special case are unclear.
+    # For ease of implementation, the first player with highest score pays
+    assert create_ramsch_game_result(teams, scores_per_team, Ramsch.TARIFF) == (20, -50, 10, 20)
+
+
+def test_game_results_ramsch_jungfrau():
+    teams = ({0}, {1}, {2})
+    scores_per_team = (0, 90, 30)
+
+    assert create_ramsch_game_result(teams, scores_per_team, Ramsch.TARIFF) == (20, -30, 10)
 
 
 def test_resolve_winning_player():
