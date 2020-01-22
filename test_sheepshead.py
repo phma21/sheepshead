@@ -365,12 +365,49 @@ def test_play_sauspiel_until_end():
     assert game.is_finished()
 
 
-# todo: test game results fuer:
-# teams 1 vs 3
-# teams 1 vs 1 vs 1
+def test_play_ramsch():
+    player_cards = [{Card(HERZ, OBER), Card(EICHEL, KOENIG)},
+                    {Card(GRAS, UNTER), Card(GRAS, ACHT)},
+                    {Card(EICHEL, SAU), Card(SCHELLEN, ACHT)}]
 
-# todo: test for ramsch
-# -> needs change to how game results are calculated!
+    game = Game(Ramsch(player_cards), player_cards)
+
+    assert game.teams == ({0, 1, 2})
+    assert not game.is_finished()
+
+    with pytest.raises(Exception):
+        game.get_game_result()
+    assert game.get_scores_per_team() == (0, 0, 0)
+    assert game.get_scores_per_player() == (0, 0, 0)
+    assert game.get_round() == 0
+    assert game.num_players == 3
+
+    with pytest.raises(Exception):
+        game.play_card(Card(GRAS, UNTER))
+
+    game.play_card(Card(EICHEL, KOENIG))
+    game.play_card(Card(GRAS, ACHT))
+
+    assert game.get_current_turn() == Turn(0, 2, {Card(EICHEL, SAU), Card(SCHELLEN, ACHT)}, {Card(EICHEL, SAU)})
+
+    with pytest.raises(Exception):
+        game.play_card(Card(SCHELLEN, ACHT))
+
+    game.play_card((Card(EICHEL, SAU)))
+
+    assert game.get_scores_per_player() == (0, 0, 15)
+    assert game.get_scores_per_team() == (0, 0, 15)
+    assert game.get_round() == 1
+
+    game.play_card(Card(HERZ, OBER))
+    game.play_card(Card(GRAS, UNTER))
+    game.play_card(Card(SCHELLEN, ACHT))
+
+    assert game.is_finished()
+    assert game.get_scores_per_player() == (5, 0, 15)
+    assert game.get_scores_per_team() == (5, 0, 15)
+
+    assert game.get_game_result() == (10, 20, -30)
 
 
 def test_solo():
@@ -487,7 +524,6 @@ def test_game_results_solo_5():
     teams = ({1}, {0, 2, 3})
     scores_per_team = (90, 30)
 
-    # todo: rules correct?
     assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (-50, 150, -50, -50)
 
 
@@ -495,7 +531,6 @@ def test_game_results_solo_6():
     teams = ({1}, {0, 2, 3})
     scores_per_team = (110, 10)
 
-    # todo: rules correct?
     assert create_standard_game_result(teams, scores_per_team, SinglePlayerGame.TARIFF) == (-60, 180, -60, -60)
 
 
