@@ -75,10 +75,8 @@ class Sauspiel(BasicTrumpGame):
     def __init__(self, player_cards: List[Set[Card]], rufsau: Card, playmaker: int, davon_laufen=False):
         super().__init__()
         self.rufsau = deepcopy(rufsau)
-        # todo: test
         if self.rufsau in player_cards[playmaker]:
             raise SauspielException("Playmaker holds the ace in his own hands!")
-        # todo: test
         if len([card for card in player_cards[playmaker] if card.suit == self.rufsau.suit and card not in self.TRUMP_CARD_RANKS]) == 0:
             raise SauspielException("Player has no matching card to search ace!")
 

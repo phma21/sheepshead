@@ -1,22 +1,42 @@
 import pytest
 
 from card_types import *
-from deck import create_shuffled_player_hands, create_shuffled_deck, count_score
+from deck import create_shuffled_deck, count_score
 from rules import Sauspiel, Solo, Wenz, Geier, Ramsch, create_standard_game_result, \
     create_ramsch_game_result, SinglePlayerGame
 from sheepshead import Game, Tick, Turn
 
+EMPTY_PLAYER_HAND_3 = [set()] * 3
+EMPTY_PLAYER_HAND_4 = [set()] * 4
+
 
 def setup_eichel_rufspiel():
-    return Sauspiel(create_shuffled_player_hands(), Card(EICHEL, SAU), 0)
+    player_hands = [{Card(EICHEL, SIEBEN)}, set(), set(), set()]
+    return Sauspiel(player_hands, Card(EICHEL, SAU), 0)
 
 
 def setup_gras_rufspiel():
-    return Sauspiel(create_shuffled_player_hands(), Card(GRAS, SAU), 0)
+    player_hands = [{Card(GRAS, SIEBEN)}, set(), set(), set()]
+    return Sauspiel(player_hands, Card(GRAS, SAU), 0)
 
 
 def setup_schellen_rufspiel():
-    return Sauspiel(create_shuffled_player_hands(), Card(SCHELLEN, SAU), 0)
+    player_hands = [{Card(SCHELLEN, SIEBEN)}, set(), set(), set()]
+    return Sauspiel(player_hands, Card(SCHELLEN, SAU), 0)
+
+
+def test_sauspiel_sau_in_hand():
+    player_hands = [{Card(SCHELLEN, SAU)}, set(), set(), set()]
+
+    with pytest.raises(Exception):
+        Sauspiel(player_hands, rufsau=Card(SCHELLEN, SAU), playmaker=0)
+
+
+def test_sauspiel_no_matching_suit():
+    player_hands = [set(), {Card(GRAS, OBER)}, set(), set()]
+
+    with pytest.raises(Exception):
+        Sauspiel(player_hands, rufsau=Card(GRAS, SAU), playmaker=1)
 
 
 def test_winning_position_trump():
@@ -52,43 +72,43 @@ def test_winning_position_no_trump_2():
 def test_winning_position_wenz():
     cards = [Card(EICHEL, OBER), Card(GRAS, KOENIG), Card(SCHELLEN, UNTER)]
 
-    assert Wenz(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 2
+    assert Wenz(EMPTY_PLAYER_HAND_4, 0, GRAS).winning_position(cards) == 2
 
 
 def test_winning_position_wenz_2():
     cards = [Card(GRAS, OBER), Card(GRAS, KOENIG), Card(SCHELLEN, SAU)]
 
-    assert Wenz(create_shuffled_player_hands(), 0, HERZ).winning_position(cards) == 1
+    assert Wenz(EMPTY_PLAYER_HAND_4, 0, HERZ).winning_position(cards) == 1
 
 
 def test_winning_position_wenz_3():
     cards = [Card(GRAS, KOENIG), Card(GRAS, OBER)]
 
-    assert Wenz(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 0
+    assert Wenz(EMPTY_PLAYER_HAND_4, 0, GRAS).winning_position(cards) == 0
 
 
 def test_winning_position_geier():
     cards = [Card(HERZ, OBER), Card(GRAS, KOENIG), Card(GRAS, UNTER)]
 
-    assert Geier(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 0
+    assert Geier(EMPTY_PLAYER_HAND_4, 0, GRAS).winning_position(cards) == 0
 
 
 def test_winning_position_geier_2():
     cards = [Card(GRAS, KOENIG), Card(GRAS, UNTER)]
 
-    assert Geier(create_shuffled_player_hands(), 0, GRAS).winning_position(cards) == 0
+    assert Geier(EMPTY_PLAYER_HAND_4, 0, GRAS).winning_position(cards) == 0
 
 
 def test_winning_position_geier_3():
     cards = [Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ZEHN), Card(HERZ, ACHT)]
 
-    assert Geier(create_shuffled_player_hands(), 0, HERZ).winning_position(cards) == 3
+    assert Geier(EMPTY_PLAYER_HAND_4, 0, HERZ).winning_position(cards) == 3
 
 
 def test_winning_position_geier_4():
     cards = [Card(GRAS, UNTER), Card(EICHEL, SAU), Card(SCHELLEN, ZEHN), Card(HERZ, ACHT)]
 
-    assert Geier(create_shuffled_player_hands(), 0, EICHEL).winning_position(cards) == 1
+    assert Geier(EMPTY_PLAYER_HAND_4, 0, EICHEL).winning_position(cards) == 1
 
 
 def test_score():
@@ -172,10 +192,11 @@ def test_allowed_cards_rufsau_empty_trick_4():
 
 def test_allowed_cards_rufsau_empty_trick_davonlaufen():
     layed_out_cards = []
-    player_cards = {Card(GRAS, NEUN), Card(SCHELLEN, OBER), Card(GRAS, SAU), Card(GRAS, KOENIG), Card(GRAS, SIEBEN)}
+    player_cards = [{Card(GRAS, NEUN), Card(SCHELLEN, OBER), Card(GRAS, SAU), Card(GRAS, KOENIG), Card(GRAS, SIEBEN)},
+                    {Card(GRAS, ZEHN)}, set(), set()]
 
-    assert Sauspiel(create_shuffled_player_hands(), rufsau=Card(GRAS, SAU), davon_laufen=True, playmaker=0)\
-               .allowed_cards(layed_out_cards, player_cards) == player_cards
+    assert Sauspiel(player_cards, rufsau=Card(GRAS, SAU), davon_laufen=True, playmaker=1)\
+               .allowed_cards(layed_out_cards, player_cards[0]) == player_cards[0]
 
 
 def test_allowed_cards_rufsau_irrelevant_suit():
@@ -221,7 +242,7 @@ def test_wenz_allowed_cards_not_trump():
     layed_out_cards = [Card(HERZ, KOENIG)]
     player_cards = {Card(HERZ, SAU), Card(EICHEL, ZEHN), Card(HERZ, OBER), Card(HERZ, UNTER)}
 
-    eichel_wenz = Wenz(create_shuffled_player_hands(), playmaker=1, trump=EICHEL)
+    eichel_wenz = Wenz(EMPTY_PLAYER_HAND_4, playmaker=1, trump=EICHEL)
 
     assert eichel_wenz.allowed_cards(layed_out_cards, player_cards) \
         == {Card(HERZ, SAU), Card(HERZ, OBER)}
@@ -231,7 +252,7 @@ def test_wenz_allowed_cards_trump():
     layed_out_cards = [Card(EICHEL, KOENIG)]
     player_cards = {Card(HERZ, SAU), Card(EICHEL, ZEHN), Card(HERZ, OBER), Card(HERZ, UNTER)}
 
-    eichel_wenz = Wenz(create_shuffled_player_hands(), playmaker=1, trump=EICHEL)
+    eichel_wenz = Wenz(EMPTY_PLAYER_HAND_4, playmaker=1, trump=EICHEL)
 
     assert eichel_wenz.allowed_cards(layed_out_cards, player_cards) \
         == {Card(EICHEL, ZEHN), Card(HERZ, UNTER)}
@@ -241,7 +262,7 @@ def test_geier_allowed_cards_trump():
     layed_out_cards = [Card(HERZ, KOENIG)]
     player_cards = {Card(HERZ, UNTER), Card(HERZ, OBER), Card(HERZ, ACHT), Card(GRAS, UNTER)}
 
-    herz_geier = Geier(create_shuffled_player_hands(), playmaker=1, trump=HERZ)
+    herz_geier = Geier([set()] * 4, playmaker=1, trump=HERZ)
 
     assert herz_geier.allowed_cards(layed_out_cards, player_cards) == \
            {Card(HERZ, OBER), Card(HERZ, ACHT), Card(HERZ, UNTER)}
@@ -251,7 +272,7 @@ def test_geier_allowed_cards_no_trump():
     layed_out_cards = [Card(HERZ, KOENIG), Card(EICHEL, ZEHN)]
     player_cards = {Card(GRAS, UNTER), Card(GRAS, OBER), Card(HERZ, SAU)}
 
-    schellen_geier = Geier(create_shuffled_player_hands(), playmaker=1, trump=SCHELLEN)
+    schellen_geier = Geier(EMPTY_PLAYER_HAND_4, playmaker=1, trump=SCHELLEN)
 
     assert schellen_geier.allowed_cards(layed_out_cards, player_cards) == {Card(HERZ, SAU)}
 
@@ -372,7 +393,7 @@ def test_play_ramsch():
 
     game = Game(Ramsch(player_cards), player_cards)
 
-    assert game.teams == ({0, 1, 2})
+    assert game.teams == ({0}, {1}, {2})
     assert not game.is_finished()
 
     with pytest.raises(Exception):
@@ -398,10 +419,11 @@ def test_play_ramsch():
     assert game.get_scores_per_player() == (0, 0, 15)
     assert game.get_scores_per_team() == (0, 0, 15)
     assert game.get_round() == 1
+    assert game.get_current_turn() == Turn(1, 2, {Card(SCHELLEN, ACHT)}, {Card(SCHELLEN, ACHT)})
 
+    game.play_card(Card(SCHELLEN, ACHT))
     game.play_card(Card(HERZ, OBER))
     game.play_card(Card(GRAS, UNTER))
-    game.play_card(Card(SCHELLEN, ACHT))
 
     assert game.is_finished()
     assert game.get_scores_per_player() == (5, 0, 15)
@@ -613,13 +635,13 @@ def test_teams_sauspiel():
 
 
 def test_teams_wenz():
-    eichel_wenz = Wenz(create_shuffled_player_hands(), playmaker=2, trump=EICHEL)
+    eichel_wenz = Wenz(EMPTY_PLAYER_HAND_4, playmaker=2, trump=EICHEL)
 
     assert eichel_wenz.teams == ({2}, {0, 1, 3})
 
 
 def test_teams_solo():
-    eichel_solo = Solo(create_shuffled_player_hands(), playmaker=0, trump=EICHEL)
+    eichel_solo = Solo(EMPTY_PLAYER_HAND_4, playmaker=0, trump=EICHEL)
 
     assert eichel_solo.teams == ({0}, {1, 2, 3})
 

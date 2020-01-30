@@ -5,7 +5,7 @@ from typing import Tuple, List, Set
 
 from card_types import *
 from deck import count_score, create_shuffled_player_hands
-from rules import Sauspiel, BasicTrumpGame
+from rules import Sauspiel, BasicTrumpGame, SauspielException
 
 Tick = namedtuple('Tick', 'cards scoring_player')
 
@@ -47,13 +47,10 @@ class Game:
         return tuple(scores)
 
     def get_scores_per_team(self) -> Tuple[int, ...]:
-        # 0 player team, 1 non-player team
+        # For 2 team games: 0 player team, 1 non-player team
         scores_per_player = self.get_scores_per_player()
 
-        playmaker_scores = [scores_per_player[player] for player in self.mode.teams[0]]
-        non_player_scores = [scores_per_player[player] for player in self.mode.teams[1]]
-
-        return sum(playmaker_scores), sum(non_player_scores)
+        return tuple(map(lambda team: sum([scores_per_player[player] for player in team]), self.mode.teams))
 
     def _get_current_player_hand(self):
         return self.player_cards[self.current_player]
@@ -93,10 +90,21 @@ class Game:
             raise Exception("Game is not over yet!")
 
 
-def play_random_game():
+def try_create_game():
     player_cards = create_shuffled_player_hands()
-    sauspiel = Sauspiel(player_cards, rufsau=Card(EICHEL, SAU), playmaker=0)
-    game = Game(sauspiel, player_cards, starting_player=0)
+
+    try:
+        sauspiel = Sauspiel(player_cards, rufsau=Card(EICHEL, SAU), playmaker=0)
+
+        return Game(sauspiel, player_cards, starting_player=0)
+    except SauspielException:
+        print("recreating")
+        return try_create_game()
+
+
+def play_random_game():
+
+    game = try_create_game()
 
     while not game.is_finished():
         turn = game.get_current_turn()
@@ -109,11 +117,8 @@ def play_random_game():
         print("error!")
 
 
-# todo: game play test for ramsch
-
-
 if __name__ == '__main__':
-    num_iterations = 10
+    num_iterations = 500
     seconds = timeit(play_random_game, number=num_iterations)
     print(f'{num_iterations} games took {seconds} seconds')
     print(f'That is {num_iterations / seconds} iterations per second')
