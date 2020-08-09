@@ -4,7 +4,7 @@ from timeit import timeit
 from typing import Tuple, List, Set
 
 from card_types import *
-from deck import count_score, create_shuffled_player_hands
+from deck import count_score, create_shuffled_4_player_hands
 from rules import Sauspiel, BasicTrumpGame, SauspielException
 
 Tick = namedtuple('Tick', 'cards scoring_player')
@@ -91,7 +91,7 @@ class Game:
 
 
 def try_create_game():
-    player_cards = create_shuffled_player_hands()
+    player_cards = create_shuffled_4_player_hands()
 
     try:
         sauspiel = Sauspiel(player_cards, rufsau=Card(EICHEL, SAU), playmaker=0)
@@ -122,3 +122,5 @@ if __name__ == '__main__':
     seconds = timeit(play_random_game, number=num_iterations)
     print(f'{num_iterations} games took {seconds} seconds')
     print(f'That is {num_iterations / seconds} iterations per second')
+
+
